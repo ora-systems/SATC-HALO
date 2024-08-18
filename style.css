@@ -43,7 +43,7 @@ p {
     margin:0px;
     padding: 0px;
 
-    margin-left: 20%;
+    margin-left: 0%;
     width: 500px;
     height: 500px;
 }
@@ -91,7 +91,7 @@ p {
     height: 25px;
     margin-left: 15px;
     margin-bottom: 110px;
-    background: linear-gradient(to right, purple, blue, green);
+    background: linear-gradient(to right, purple, blue, cyan, green);
     box-shadow:  0px 0px 15px #222,
                 inset 5px 5px 5px #000,
                 inset -5px -5px 15px #333;

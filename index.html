@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css">
         
     <script type="text/javascript" src="p5b.min.js"></script>
-    <script type="text/javascript" src="resources/soundjs/lib/soundjs.js"></script>
+    <script type="text/javascript" src="resources/soundjs.js"></script>
     <script type="text/javascript" src="halo_stratosphere.js"></script>
                                         
     </head>
@@ -134,6 +134,9 @@
         </div>
     </div>
 
+    <input type="checkbox" id="sound" value="sound">
+    <p>Sound</p>
+
     <div class="controls2" id="controls2">
 
         <input type="checkbox" id="halo" value="HALO">
@@ -144,25 +147,21 @@
         <div class="slider_control">
         <p style="font-size: 24px;">HR</p>
         <input type="range" min="0" max="100" value="50" class="slider_bpm" id="bpm">
-        <p id="bpmlabel" style="font-size: 24px;">100</p>
         </div>
 
         <div class="slider_control">
             <p style="font-size: 24px;">Alt</p>
             <input type="range" min="0" max="10000" class="slider" id="altitude">
-            <p id="altitudelabel" style="font-size: 24px;">100</p>
         </div>
 
         <div class="slider_control">
             <p style="font-size: 24px;">SpO2</p>
             <input type="range" min="0" max="100" value="50" class="slider_o2" id="o2sat">
-            <p id="o2satlabel" style="font-size: 24px;">100</p>
         </div>
 
         <div class="slider_control">
             <p style="font-size: 24px;">RR</p>
             <input type="range" min="0" max="100" value="50" class="slider_resprate" id="resprate">
-            <p id="respratelabel" style="font-size: 24px;">100</p>
         </div>
 
         <div class = "biometrics">
@@ -171,6 +170,7 @@
 
         
     </div>
+
 
     <div class="canvasSection" id="canvasSection" style="background-color: black">
     </div>
