@@ -6,15 +6,17 @@ var soundID;
 
 var simData = [];
 
+var mode = 0;
+
 var initial = true;
 var time = 0.0;
 var pTimeStamp = 0.0, timeStamp = 0.0, clock = 0.0, span = 0.0;
-var SPEED = 1.0;
+var SPEED = 5.0;
 
 
 const ALTITUDE_MIN = 0.0, ALTITUDE_MAX = 30000.0;
 const BPM_MIN = 50.0, BPM_MAX = 170.0;
-const O2SAT_MIN = 0.59, O2SAT_MAX = 1.0;
+const O2SAT_MIN = 0.50, O2SAT_MAX = 1.0;
 const RESP_RATE_MIN = 1.0, RESP_RATE_MAX = 50.0;
 
 
@@ -66,11 +68,142 @@ var bpmStasis = 0;
 var o2SatStasis = 0;
 var respRateStasis = 0;
 
+var bpmStasisNorm = 0;
+var o2SatStasisNorm = 0;
+var respRateStasisNorm = 0;
+
 
 
 function preload() {
     font = loadFont('resources/BebasNeue-Regular.ttf');
 
+}
+
+function updateData() {
+    console.log("DATA ");
+    const control = document.getElementById("data_control");
+    mode = control.value;
+
+    if (mode == 0) {
+        fetch("resources/PassiveRecovery1.csv")
+        .then((res) => res.text())
+        .then((text) => {
+            simData = CSVToArray(text);
+            simData.shift();
+    
+            console.log(simData)
+    
+        altitude = simData[0][1];
+        bpm = simData[0][3];
+        o2Sat = simData[0][2]/100.0;
+        respRate = simData[0][4];
+
+        bpmStasis = 60;
+        o2SatStasis = 1.0;
+        respRateStasis = 8.0;
+        setStasisNorms();
+
+         })
+        .catch((e) => console.error(e));
+    } else if (mode == 1) {
+        fetch("resources/PassiveRecovery2.csv")
+        .then((res) => res.text())
+        .then((text) => {
+            simData = CSVToArray(text);
+            simData.shift();
+    
+            console.log(simData)
+    
+        altitude = simData[0][1];
+        bpm = simData[0][3];
+        o2Sat = simData[0][2]/100.0;
+        respRate = simData[0][4];
+
+        bpmStasis = 80;
+        o2SatStasis = 0.94;
+        respRateStasis = 14.0;
+        setStasisNorms();
+
+         })
+        .catch((e) => console.error(e));
+    } else if (mode == 2) {
+        fetch("resources/GenPop.csv")
+        .then((res) => res.text())
+        .then((text) => {
+            simData = CSVToArray(text);
+            simData.shift();
+    
+            console.log(simData)
+    
+        altitude = simData[0][1];
+        bpm = simData[0][3];
+        o2Sat = simData[0][2]/100.0;
+        respRate = simData[0][4];
+
+        bpmStasis = 60;
+        o2SatStasis = 1.0;
+        respRateStasis = 8.0;
+        setStasisNorms();
+
+         })
+        .catch((e) => console.error(e));
+    } else if (mode == 3) {
+        fetch("resources/AmAthlete.csv")
+        .then((res) => res.text())
+        .then((text) => {
+            simData = CSVToArray(text);
+            simData.shift();
+    
+            console.log(simData)
+    
+        altitude = simData[0][1];
+        bpm = simData[0][3];
+        o2Sat = simData[0][2]/100.0;
+        respRate = simData[0][4];
+
+        bpmStasis = 60;
+        o2SatStasis = 1.0;
+        respRateStasis = 8.0;
+        setStasisNorms();
+
+         })
+        .catch((e) => console.error(e));
+    } else if (mode == 4) {
+        fetch("resources/data.csv")
+        .then((res) => res.text())
+        .then((text) => {
+            simData = CSVToArray(text);
+            simData.shift();
+    
+            console.log(simData)
+    
+        altitude = simData[0][1];
+        bpm = simData[0][3];
+        o2Sat = simData[0][2]/100.0;
+        respRate = simData[0][4];
+
+        bpmStasis = 60;
+        o2SatStasis = 1.0;
+        respRateStasis = 8.0;
+        setStasisNorms();
+
+         })
+        .catch((e) => console.error(e));
+    }
+
+    time = 0.0;
+    clock = 0.0;
+    initial = true;
+    dataPoints = 0;
+    bpmHistoric = [];
+
+    console.log("STASIS " + o2SatStasisNorm)
+}
+
+function setStasisNorms() {
+    bpmStasisNorm = (bpmStasis-BPM_MIN)/(BPM_MAX-BPM_MIN);
+    o2SatStasisNorm = (o2SatStasis-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+    respRateStasisNorm = (respRateStasis-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
 }
 
 
@@ -90,7 +223,7 @@ function setup() {
 
 
 
-    fetch("resources/data.csv")
+    fetch("resources/PassiveRecovery1.csv")
     .then((res) => res.text())
     .then((text) => {
         simData = CSVToArray(text);
@@ -107,9 +240,27 @@ function setup() {
 
 
 
-    bpmStasis = 55;
-    o2SatStasis = 0.99;
-    respRateStasis = 10;
+    bpmStasisNorm = 55;
+    o2SatStasisNorm = 0.99;
+    respRateStasisNorm = 10;
+
+    if (mode == 0) {
+        bpmStasisNorm = (60-BPM_MIN)/(BPM_MAX-BPM_MIN);
+        o2SatStasisNorm = (1.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+        respRateStasisNorm = (8.0-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
+    } else if (mode == 1) {
+        bpmStasisNorm = (80-BPM_MIN)/(BPM_MAX-BPM_MIN);
+        o2SatStasisNorm = (0.94-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+        respRateStasisNorm = (14.0-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
+    } else if (mode == 2) {
+        bpmStasisNorm = (60-BPM_MIN)/(BPM_MAX-BPM_MIN);
+        o2SatStasisNorm = (1.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+        respRateStasisNorm = (8.0-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
+    } else if (mode == 3) {
+        bpmStasisNorm = (60-BPM_MIN)/(BPM_MAX-BPM_MIN);
+        o2SatStasisNorm = (1.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+        respRateStasisNorm = (8.0-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
+    }
 
 
     /*P5 JS canvas for PIL + HALO render*/
@@ -162,11 +313,16 @@ function setup() {
 
 function interpolateData(data, t, n) {
     if (t < 0) t = 0;
+    if (data) {
     if (t > data.length-1) t = data.length-1;
     var p = t-floor(t);
     var i = floor(t);
-    var pointA = data[i][n] + (data[i+1][n] - data[i][n])*p;
+    var pointA = (data[i+1]) ?
+     data[i][n] + (data[i+1][n] - data[i][n])*p :
+     data[i][n];
     return pointA;
+    }
+    return 0;
 }
 
 /*function bezierInterpolateData(data, t, offset) {
@@ -179,6 +335,28 @@ function interpolateData(data, t, n) {
 }*/
 
 function draw() {
+    
+    if (clock/15000.0 > simData.length-1) {
+        clock = 0.0;
+
+        initial = true;
+        stressDelta = 0;
+
+        dataPoints = 0;
+    }
+
+    if (simData[1]) {
+        altitude = interpolateData(simData, clock/15000.0, 1);
+        o2Sat = interpolateData(simData, clock/15000.0, 2)/100.0;
+        bpm = interpolateData(simData, clock/15000.0, 3);
+        respRate = interpolateData(simData, clock/15000.0, 4);
+    }
+
+    //Normalized 
+    var altitudeNorm = (altitude-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN)
+    var bpmNorm = (bpm-BPM_MIN)/(BPM_MAX-BPM_MIN)
+    var o2SatNorm = (o2Sat-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN)
+    var respRateNorm = (respRate-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN)
 
     /* CLOCK */
     timeStamp = Date.now();
@@ -186,20 +364,12 @@ function draw() {
     pTimeStamp = timeStamp;
 
 
-    if (clock/15000.0 < 30) clock += delta*SPEED;
+    clock += delta*SPEED;
     span += delta;
 
-    if (clock/15000.0 > 29) {
-        clock = 0.0;
-
-        dataPoints = 0;
-    }
+    
     
     time = clock/20.0;
-
-
-    waveOffset += 0.03*waveSpeed;
-    if (waveOffset > 1.0) waveOffset--;
 
 
     var period = 60.0/bpm*1000.0; //time between heart beats in milliseconds
@@ -217,7 +387,7 @@ function draw() {
         for (var i = 0; i < 100; i++) {
             particles.push([0, random(1)*PI*2, 0.5 + 2.0*pow(random(1), 0.5 + 3.0*(1.0-bpmNorm)), (random(2)-1)*0.0]);
         }
-        console.log(particles);
+        //console.log(particles);
 
         if (soundID && document.getElementById("sound").checked) 
         createjs.Sound.play(soundID.src);
@@ -238,9 +408,8 @@ function draw() {
 
     image(graph, width/4, width/50, width/4, width/4/5)
 
-    bpmStasis = 0.15;
-    o2SatStasis = 0.95;
-    respRateStasis = 0.1;
+
+   
 
     
 
@@ -248,12 +417,17 @@ fill(255);
     textSize(36*(width/1700));
 
 
-        if (simData[0]) {
+        if (simData[(int)(clock/15000.0)] && simData[(int)(clock/15000.0)][1]) {
         altitudeNew = simData[(int)(clock/15000.0)][1];
         bpmNew = simData[(int)(clock/15000.0)][3];
         o2SatNew = simData[(int)(clock/15000.0)][2]/100.0;
         respRateNew = simData[(int)(clock/15000.0)][4];
 
+        } else {
+            altitudeNew = ALTITUDE_MIN;
+            bpmNew = BPM_MIN;
+            o2SatNew = O2SAT_MIN;
+            respRateNew = RESP_RATE_MIN;
         }
 
     //bpm = .0;
@@ -293,24 +467,12 @@ fill(255);
 
     //console.log(bpm);
 
-    if (simData[1]) {
-        altitude = interpolateData(simData, clock/15000.0, 1);
-        o2Sat = interpolateData(simData, clock/15000.0, 2)/100.0;
-        bpm = interpolateData(simData, clock/15000.0, 3);
-        respRate = interpolateData(simData, clock/15000.0, 4);
-
-    }
-    //Normalized 
-    var altitudeNorm = (altitude-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN)
-    var bpmNorm = (bpm-BPM_MIN)/(BPM_MAX-BPM_MIN)
-    var o2SatNorm = (o2Sat-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN)
-    var respRateNorm = (respRate-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN)
 
 
 
 
     //Calculate stress
-    var stress = (bpmNorm - bpmStasis) + (o2SatStasis - o2SatNorm);
+    var stress = (bpmNorm - bpmStasisNorm) + (o2SatStasisNorm - o2SatNorm);
  
 
     if (initial) {
@@ -331,74 +493,29 @@ fill(255);
     
     textSize(32*(width/1700))
     noStroke();
-    text("Bobby Williams", width*0.76, height - height/5)
-
-    //SPECTRUMS
-
-    noStroke();
-    for (var i = 0; i < 1.0; i += 0.05) {
-        var c = bpmColor(i);
-        fill(c.red, c.green, c.blue);
-        rect(width/10*7 - 50 + i*100, height/10*9, 5, 10);
+    if (mode == 0) {
+        text("Passive Recovery 1", width*0.76, height - height/4)
+    } else if (mode == 1) {
+        text("Passive Recovery 2", width*0.76, height - height/4)
+    } else if (mode == 2) {
+        text("General Population", width*0.76, height - height/4)
+    } else if (mode == 3) {
+        text("Amateur Athlete", width*0.76, height - height/4)
+    } else if (mode == 4) {
+        text("Bobby Williams", width*0.76, height - height/4)
     }
-    var meter = width/10*7 - 50 + bpmNorm*100;
-    stroke(255);
-    line(meter, height/10*9-5, meter, height/10*9 + 15)
-    noStroke();
-    fill(255);
-    text("HR", width/10*7 - 10, height/10*9 + width*0.03);
-    text(round(bpm), width/10*7 - 15, height/10*9 - width*0.01);
 
-
-    for (var i = 0; i < 1.0; i += 0.05) {
-        var c = o2SatColor(0.001+i);
-        fill(c.red*255, c.green*255, c.blue*255);
-        rect(width/10*8 - 50 + i*100, height/10*9, 5, 10);
-    }
-    meter = width/10*8 - 50 + o2SatNorm*100;
-    stroke(255);
-    line(meter, height/10*9-5, meter, height/10*9 + 15)
-    noStroke();
-    fill(255);
-    text("SpO2", width/10*8 - 15, height/10*9 + width*0.03);
-    text(round(o2Sat*100.0) + "%", width/10*8 - 10, height/10*9 - width*0.01);
-
-
-    for (var i = 0; i < 1.0; i += 0.05) {
-        var red, green, blue;
-    if (i < 0.25) {
-        var sub = i/0.25;
-
-        red = 55*(1-sub);
-        green = 255*sub;
-        blue = 255*(1-sub);
-    } else if (i <= 1.0) {
-        var sub = (i-0.25)/0.75;
-
-        red = 255*sub;
-        green = 255*(1-sub);
-        blue = 0;
-    }
-        fill(red, green, blue);
-        rect(width/10*9 - 50 + i*100, height/10*9, 5, 10);
-    }
-    meter = width/10*9 - 50 + respRateNorm*100;
-    stroke(255);
-    line(meter, height/10*9-5, meter, height/10*9 + 15)
-    noStroke();
-    fill(255);
-    text("RR", width/10*9 - 8, height/10*9 + width*0.03);
-    text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
+    
 
 
 
 
-    bpmHistoric[dataPoints] = bpm;
-    altitudeHistoric[dataPoints] = altitude;
+    //bpmHistoric[dataPoints] = bpm;
+    //altitudeHistoric[dataPoints] = altitude;
     o2SatHistoric[dataPoints] = o2Sat;
-    respRateHistoric[dataPoints] = respRate;
+    //respRateHistoric[dataPoints] = respRate;
 
-    dataPoints++;
+    //dataPoints++;
 
     
     /*Set Parameters*/
@@ -418,7 +535,7 @@ fill(255);
     var historicDelta = (dataPoints >= 155) ? dataPoints-155 : 0;
     historico2satNorm = (o2SatHistoric[historicDelta] - O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
     
-    //green to dark blue
+    //green(StasisNorm) to cyan to blue to purple
     var c = o2SatColor(o2SatNorm);
     centerColor.red = c.red*255;
     centerColor.green = c.green*255;
@@ -429,7 +546,7 @@ fill(255);
     mainColor.blue = c.blue*255;
 
 
-    //green yellow orange red
+    //blue(1) green(StasisNorm) yellow orange red(50)
     if (respRateNorm < 0.25) {
         var sub = respRateNorm/0.25;
 
@@ -450,28 +567,11 @@ fill(255);
    circleColor.green = color.green;
    circleColor.blue = color.blue;
 
-
-   //White case
-    if (document.getElementById("white").checked) {
-        centerColor.red = 65;
-        centerColor.green = 65;
-        centerColor.blue = 65;
-
-        mainColor.red = 65;
-        mainColor.green = 65;
-        mainColor.blue = 65;
-
-        waveColor.red = 255;
-        waveColor.green = 255;
-        waveColor.blue = 255;
-
-        circleColor.red = 255;
-        circleColor.green = 255;
-        circleColor.blue = 255;
-    }
-
-        
-
+   
+   color = respRateColor(respRateNorm);
+   waveColor.red = color.red*255;
+   waveColor.green = color.green*255;
+   waveColor.blue = color.blue*255;
 
     
 
@@ -484,32 +584,116 @@ fill(255);
        stroke(255,255,255,64);
        var graphWidth = width-height;
        var graphHeight = height/4;
+       var graphHeightB = height/4;
        var graphA = height/4;
        var graphB = height/3*2;
        //rect(-width/2, -height/2, graphWidth, height);
-       rect(100, graphA, graphWidth-400, graphHeight);
-       rect(100, graphB, graphWidth-400, graphHeight);
-       rect(graphWidth-200, graphA, 200, graphHeight);
-       rect(graphWidth-200, graphB, 200, graphHeight);
-       stroke(0, 255, 0, 255);
+       rect(100, graphA, graphWidth-100, graphHeight);
+       //rect(100, graphB, graphWidth-100, graphHeightB);
+       stroke(0, 255, 0, 64);
        //drawingContext.setLineDash([1,10])
-       line(100, graphB + graphHeight/2, graphWidth-300, graphB + graphHeight/2);
+       //line(100, graphB + graphHeightB/2, graphWidth, graphB + graphHeightB/2);
        //drawingContext.setLineDash([0, 0])
-   
+
+
+       noStroke();
+       fill(255);
+
+       
+       //circle(100 + isopos.x*(graphWidth-100) + isopos.z*sqrt(1.0/2.0)*graphHeightB, graphB + graphHeightB - isopos.y*graphHeightB - isopos.z*sqrt(1.0/2.0)*graphHeightB, 3);
+       var projpos = projectIso(graphHeight/2, [bpmNorm, 1.0-respRateNorm, o2SatNorm]);
+       circle(200 + projpos[0], graphB + graphHeightB/2 + projpos[1], 3)
+
+       if (dataPoints <= 0 || dist(projpos[0], projpos[1], bpmHistoric[dataPoints-1][0], bpmHistoric[dataPoints-1][1]) > 5.0) {
+        bpmHistoric[dataPoints] = projpos;
+        dataPoints++;
+       }
+
+       stroke(255,255,255,64);
+       noFill();
+       beginShape();
+        for (var i = 1; i < dataPoints; i++) {
+            vertex(200 + bpmHistoric[i][0], graphB + graphHeightB/2 + bpmHistoric[i][1]);
+        }
+        endShape();
+
+        noStroke();
+
+       fill(0, 255, 0);
+       var projpos2 = projectIso(graphHeight/2, [bpmStasisNorm, 1.0-respRateStasisNorm, o2SatStasisNorm]);
+       circle(200 + projpos2[0], graphB + graphHeightB/2 + projpos2[1], 5)
+
+       stroke(255,255,255,64);
+
+       line(200 + projpos[0], graphB + graphHeightB/2 + projpos[1], 200 + projpos2[0], graphB + graphHeightB/2 + projpos2[1])
+
+
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [0,1,0], [1,1,0]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [0,0,1], [1,0,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [0,1,1], [1,1,1]);
+
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [1,0,0], [1,1,0]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [1,1,0], [1,1,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [1,1,1], [1,0,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [1,0,1], [1,0,0]);
+
+       //isoLine(graphHeight/2, [100, graphB + graphHeightB/2], [0,0,0], [0,1,0]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [0,1,0], [0,1,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [0,1,1], [0,0,1]);
+       //isoLine(graphHeight/2, [100, graphB + graphHeightB/2], [0,0,1], [0,0,0]);
+
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmNorm,0,0], [bpmNorm,1,0]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmNorm,1,0], [bpmNorm,1,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmNorm,1,1], [bpmNorm,0,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmNorm,0,1], [bpmNorm,0,0]);
+
+       stroke(0,255,0,64);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmStasisNorm,0,0], [bpmStasisNorm,1,0]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmStasisNorm,1,0], [bpmStasisNorm,1,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmStasisNorm,1,1], [bpmStasisNorm,0,1]);
+       isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmStasisNorm,0,1], [bpmStasisNorm,0,0]);
+
        stroke(255);
+       noFill();
+
+       beginShape();
+        for (var i = 0; i < 1.0; i += 0.001) {
+            //vertex(graphWidth + 50*cos(i*PI*2*(bpmNorm/bpmStasisNorm)), graphB + graphHeight/2 + 50*sin(i*PI*2*(respRateNorm/respRateStasisNorm)));
+
+            var rotations = 1, oscilations = bpm/respRate;
+            vertex(graphWidth + 50*(1+sin(-PI/2 + i*PI*2*oscilations))/2*cos(i*PI*2*rotations), graphB + graphHeight/2 + 50*(1+sin(-PI/2 + i*PI*2*oscilations))/2*sin(i*PI*2*rotations));
+
+            var rotations = 1, oscilations = bpm/respRate;
+            //vertex(graphWidth + 50*(1+sin(i*PI*2*oscilations)*0.25)*cos(i*PI*2*rotations), graphB + graphHeight/2 + 50*(1+sin(i*PI*2*oscilations)*0.25)*sin(i*PI*2*rotations));
+        }
+       endShape();
    
        beginShape();
-       for (var i = 0; i < 150; i++) {
-           var p = i/150;
-           var norm = (altitudeHistoric[dataPoints-i]-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN);
-           vertex(graphWidth - (200)*p, graphA + (1-norm)*graphHeight);
+       for (var i = dataPoints; i > 0; i--) {
+           var p = i/(dataPoints);
+           var norm = (altitudeHistoric[i]-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN);
+           //vertex(100 + (graphWidth-100)*p, graphA + (1-norm)*graphHeight);
+           //vertex(graphWidth, graphA + (1-norm)*graphHeight);
        }
        endShape();
+
+       //is there a way to use stasis values to predict an expected KPI from another KPI?
+       console.log("ratio " + bpm/respRate);
+       //it appears that there is a ratio of 5 heart beats per breath (4 according to Google), which lowers at higher bpms (higher ratio represents controlled breathing)
+       //this is known as Pulse-Respiration Quotient (PRQ)
+
+       var dur = 5.0*60.0;
+
        beginShape();
-       for (var i = dataPoints-150; i > 0; i--) {
-           var p = i/(dataPoints-150);
-           var norm = (altitudeHistoric[i]-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN);
-           vertex(100 + (graphWidth-400)*p, graphA + (1-norm)*graphHeight);
+       for (var i = 0; i < 1.0; i += 0.01) {
+        var p = clock/(dur*1000.0);
+        var subClock = 0.0;
+        if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
+            p = 1.0;
+            subClock = (clock - dur*1000.0)/15000.0;
+        }
+           var norm = (interpolateData(simData, subClock + i*clock/15000.0, 1)-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN);
+           vertex(graphWidth + p*(i-1)*(graphWidth-100), graphA + (1-norm)*graphHeight);
        }
        endShape();
 
@@ -519,14 +703,37 @@ fill(255);
        text("Altitude", width/3, graphA + graphHeight + width*0.03)
        text("Performance", width/3, graphB + graphHeight + width*0.03)
 
+//SPECTRUMS
 
-       textSize(20*(width/1700))
-       text("Historic", 100 + (graphWidth-400)*0.5, graphA + graphHeight + 30);
-       text("Snapshot", 100 + graphWidth - 200, graphA + graphHeight + 30);
-   
-   
-       text("Historic", 100 + (graphWidth-400)*0.5, graphB + graphHeight + 30);
-       text("Snapshot", 100 + graphWidth - 200, graphB + graphHeight + 30);
+noStroke();
+for (var i = 0; i < 1.0; i += 0.05) {
+    var c = bpmColor(i);
+    fill(c.red, c.green, c.blue);
+    rect(width/10*7 - 50 + i*100, height/10*9, 5, 10);
+
+    c = o2SatColor(i);
+    fill(c.red*255, c.green*255, c.blue*255);
+    rect(width/10*8 - 50 + i*100, height/10*9, 5, 10);
+
+    c = respRateColor(i);
+    fill(c.red*255, c.green*255, c.blue*255);
+    rect(width/10*9 - 50 + i*100, height/10*9, 5, 10);
+}
+
+noStroke();
+fill(255);
+text("HR", width/10*7 - 10, height/10*9 + width*0.03);
+text(round(bpm), width/10*7 - 15, height/10*9 - width*0.01);
+
+noStroke();
+fill(255);
+text("SpO2", width/10*8 - 15, height/10*9 + width*0.03);
+text(round(o2Sat*100.0) + "%", width/10*8 - 10, height/10*9 - width*0.01);
+
+noStroke();
+fill(255);
+text("RR", width/10*9 - 8, height/10*9 + width*0.03);
+text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
 
 
        noFill();
@@ -542,88 +749,121 @@ fill(255);
         line(graphWidth + 10, graphA + graphHeight*i, graphWidth, graphA + graphHeight*i)
        }
 
+/*
+       
        noFill();
        textSize(16*(width/1700));
    
        //drawingContext.setLineDash([2,20])
        stroke(circleColor.red, circleColor.green, circleColor.blue);
        stroke(255);
-       beginShape();
-       for (var i = 0; i < 50; i++) {
-           var p = i/50;
-           var norm = (bpmHistoric[dataPoints-i]-BPM_MIN)/(BPM_MAX-BPM_MIN);
-           vertex(graphWidth - (200)*p, graphB + graphHeight/2 + (bpmStasis - norm)*graphHeight/2)
+
+       //beginShape();
+       for (var i = 0; i < 1.0; i += 1.0/graphWidth) {
+        var p = clock/(dur*1000.0);
+        var subClock = 0.0;
+        if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
+            p = 1.0;
+            subClock = (clock - dur*1000.0)/15000.0;
+        }
+            noStroke();
+           var norm = (interpolateData(simData, subClock + i*clock/15000.0, 3)-BPM_MIN)/(BPM_MAX-BPM_MIN);
+           var c = bpmColor(norm);
+           fill(c.red, c.green, c.blue);
+           square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (bpmStasisNorm - norm)*graphHeightB/2, 2);
        }
-       endShape();
-       beginShape();
-       for (var i = dataPoints-50; i > 0; i--) {
-           var p = i/(dataPoints-50);
-           var norm = (bpmHistoric[i]-BPM_MIN)/(BPM_MAX-BPM_MIN);
-           vertex(100 + (graphWidth-400)*p, graphB + graphHeight/2 + (bpmStasis - norm)*graphHeight/2)
-       }
-       endShape();
+       //endShape();
+       
    
        noStroke();
        fill(255);
-       var normT = (bpmHistoric[dataPoints-1]-BPM_MIN)/(BPM_MAX-BPM_MIN);
-       text("HR", graphWidth + 45, graphB + graphHeight/2 + (bpmStasis - normT)*graphHeight/2)
+       var normT = (interpolateData(simData, clock/15000.0, 3)-BPM_MIN)/(BPM_MAX-BPM_MIN);
+       var meterY = graphB + graphHeightB/2 + (bpmStasisNorm - normT)*graphHeightB/2;
+       //text("HR", graphWidth + 5, meterY)
        noFill();
+
+var meter = width/10*7 - 50 + bpmNorm*100;
+stroke(255);
+line(meter, height/10*9 - 5, meter, height/10*9 + 15)
+stroke(255,255,255,64);
+line(meter, meterY, meter, height/10*9 + 15)
+line(graphWidth, meterY, meter, meterY)
    
        //stroke(centerColor.red, centerColor.green, centerColor.blue);
        stroke(255);
        //drawingContext.setLineDash([5, 5, 5, 30])
-       beginShape();
-       for (var i = 0; i < 50; i++) {
-           var p = i/50;
-           var norm = (o2SatHistoric[dataPoints-i]-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
-           vertex(graphWidth - (200)*p, graphB + graphHeight/2 + (o2SatStasis - norm)*graphHeight/2)
+       
+       noStroke();
+       //beginShape();
+       for (var i = 0; i < 1.0; i += 1.0/graphWidth) {
+        var p = clock/(dur*1000.0);
+        var subClock = 0.0;
+        if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
+            p = 1.0;
+            subClock = (clock - dur*1000.0)/15000.0;
+        }
+           var norm = (interpolateData(simData, subClock + i*clock/15000.0, 2)/100.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+           var c = o2SatColor(norm);
+           fill(c.red*255, c.green*255, c.blue*255);
+           square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (o2SatStasisNorm - norm)*graphHeightB/2, 2);
        }
-       endShape();
-       beginShape();
-       for (var i = dataPoints-50; i > 0; i--) {
-           var p = i/(dataPoints-50);
-           var norm = (o2SatHistoric[i]-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
-           vertex(100 + (graphWidth-400)*p, graphB + graphHeight/2 + (o2SatStasis - norm)*graphHeight/2)
-       }
-       endShape();
+       //endShape();
    
    
        noStroke();
        fill(255);
-       var normT = (o2SatHistoric[dataPoints-1]-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
-       text("O2", graphWidth + 5, graphB + graphHeight/2 + (o2SatStasis - normT)*graphHeight/2)
+       var normT = (interpolateData(simData, clock/15000.0, 2)/100.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
+       var meterY = graphB + graphHeightB/2 + (o2SatStasisNorm - normT)*graphHeightB/2;
+       //text("O2", graphWidth + 25, meterY)
        noFill();
+
+meter = width/10*8 - 50 + o2SatNorm*100;
+stroke(255);
+line(meter, height/10*9 - 5, meter, height/10*9 + 15)
+stroke(255,255,255,64);
+line(meter, meterY, meter, height/10*9 + 15)
+line(graphWidth, meterY, meter, meterY)
    
    
        stroke(waveColor.red, waveColor.green, waveColor.blue);
        stroke(255);
        //drawingContext.setLineDash([20, 30])
+       noStroke();
        beginShape();
-       for (var i = 0; i < 50; i++) {
-           var p = i/50;
-           var norm = (respRateHistoric[dataPoints-i]-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
-           vertex(graphWidth - (200)*p, graphB + graphHeight/2 + (respRateStasis - norm)*graphHeight/2)
+       for (var i = 0; i < 1.0; i += 1.0/graphWidth) {
+        var p = clock/(dur*1000.0);
+        var subClock = 0.0;
+        if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
+            p = 1.0;
+            subClock = (clock - dur*1000.0)/15000.0;
+        }
+           var norm = (interpolateData(simData, subClock + i*clock/15000.0, 4)-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
+           var c = respRateColor(norm);
+           fill(c.red*255, c.green*255, c.blue*255);
+           square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (respRateStasisNorm - norm)*graphHeightB/2, 2);
        }
        endShape();
-       beginShape();
-       for (var i = dataPoints-50; i > 0; i--) {
-           var p = i/(dataPoints-50);
-           var norm = (respRateHistoric[i]-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
-           vertex(100 + (graphWidth-400)*p, graphB + graphHeight/2 + (respRateStasis - norm)*graphHeight/2)
-       }
-       endShape();
-       //drawingContext.setLineDash([0,0])
+
+       drawingContext.setLineDash([0,0])
    
    
        noStroke();
        fill(255);
-       var normT = (respRateHistoric[dataPoints-1]-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
-       text("RR", graphWidth + 25, graphB + graphHeight/2 + (respRateStasis - normT)*graphHeight/2)
+       var normT = (interpolateData(simData, subClock + i*clock/15000.0, 4)-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
+       var meterY = graphB + graphHeightB/2 + (respRateStasisNorm - normT)*graphHeightB/2;
+      // text("RR", graphWidth + 45, meterY)
        noFill();
     
     
+       //drawingContext.setLineDash([20, 30])
+meter = width/10*9 - 50 + respRateNorm*100;
+stroke(255);
+line(meter, height/10*9 - 5, meter, height/10*9 + 15)
+stroke(255,255,255,64);
+line(meter, meterY, meter, height/10*9 + 15)
+line(graphWidth, meterY, meter, meterY)
 
-    
+    */
 
 
     var w2 = height*0.5*0.125;
@@ -634,7 +874,6 @@ fill(255);
     fill(circleColor.red + 0*pulseBrightness, circleColor.green + 0*pulseBrightness, circleColor.blue + 0*pulseBrightness, 32*pulseBrightness);
 
     //BPM
-    if (document.getElementById("o2").checked || true) {
 
         strokeWeight(2);
         circle(atomCenter.x, atomCenter.y, w2*2);
@@ -652,14 +891,15 @@ fill(255);
 
             noStroke();
         for (var i = 0; i < particles.length; i++) {
-            particles[i][0] += (0.01 + 0.05*particles[i][2])*0.03*delta;
-            particles[i][2] *= 0.9;
-            particles[i][1] += 0.2*particles[i][3];
+            particles[i][0] += (0.01 + 0.05*particles[i][2])*0.05*delta;
+            particles[i][2] *= 0.95;
+            particles[i][1] += 0.1*particles[i][3];
             particles[i][3] += (random(2)-1)*0.05;
             
                 fill(circleColor.red, circleColor.green, circleColor.blue,255*(1-particles[i][0]))
                 square(atomCenter.x + (w2 + w2*particles[i][0])*cos(particles[i][1]), atomCenter.y + (w2 + w2*particles[i][0])*sin(particles[i][1]), 2);
                 fill(255, 255, 255, 255*(1-particles[i][0]));
+                fill(255);
                 square(atomCenter.x + (w2 + w2*particles[i][0])*cos(particles[i][1]), atomCenter.y + (w2 + w2*particles[i][0])*sin(particles[i][1]), 1);
             
                 if (particles[i][0] > 1.0) particles.shift();
@@ -690,24 +930,7 @@ fill(255);
         }
         endShape(CLOSE);
 
-}
-    //BPM 2
-    if (document.getElementById("o2").checked) {
-    beginShape();
-    for (var i = 0; i < 1.0; i += 0.01) {
-        var r = w2*2/8 + expansion*w2*2/8*3 + (0.+de)*w/55*(sin(i*PI*8 + 0.5*time) + sin(i*PI*10 - 0.5*time));
-        //vertex(atomCenter.x + r*cos(i*PI*2), atomCenter.y + r*sin(i*PI*2));
-    }
-    endShape(CLOSE);
 
-    noStroke();
-    //beginShape();
-    for (var i = 0; i < 1.0; i += 0.1) {
-        var r = pulseRadius*w2*12;
-        //circle(atomCenter.x, atomCenter.y, i*r*2);
-    }
-    //endShape(CLOSE);
-}
 
 
     //Respiratory Rate
@@ -719,9 +942,8 @@ fill(255);
     var rad = w2*2 + w2*2*(1+sin(clock/breathPeriod*PI*2))/2
     
     breathExpansion += delta/breathPeriod;
-    rad = w2*2 + w2*2*(1+sin(breathExpansion*PI*2))/2;
+    rad = w2*2.25 + w2*1.5*(1+sin(breathExpansion*PI*2))/2;
     //circle(0, 0, rad);
-    if (document.getElementById("rr").checked || true) {
         beginShape();
         for (var i = 0; i < 1.0; i += 0.001) {
             var a = 6, b = 4;
@@ -738,7 +960,7 @@ fill(255);
             vertex(atomCenter.x + r*cos(i*PI*b + 3*breathExpansion), atomCenter.y + r*sin(i*PI*b + 3*breathExpansion));
         }
         endShape(CLOSE);
-}
+
 
 
 
@@ -750,12 +972,12 @@ fill(255);
 
 
     //blendMode(BURN);
+      radius = w2*5/height;
 
     colorMode(RGB);
     noFill();
     strokeWeight(2);
 
-    if (document.getElementById("halo").checked || true) {
 
     //Concentric rings
   for (var i = 0; i < 1.0; i += 1.0/ringCount) {
@@ -820,13 +1042,12 @@ fill(255);
       expansion2 += de;
   
       de *= pow(0.8, delta/50.0);
-      radius = w2*5/height;
 
 
 
     stressDelta *= 0.995;
     
-}
+
     //Draw FX
     
 
@@ -930,6 +1151,20 @@ function soundLoaded(event) {
     console.log("sound loaded")
 }
 
+function isoLine(s, o, pos1, pos2) {
+    var a = projectIso(s, pos1);
+    var b = projectIso(s, pos2);
+    line(o[0] + a[0], o[1] + a[1], o[0] + b[0], o[1] + b[1]);
+}
+
+function projectIso(s, isopos) {
+    var projpos = [s*(isopos[0]*cos(0)*8.0 + isopos[1]*cos(2*PI/3) + isopos[2]*cos(4*PI/3)), 
+    s*(isopos[0]*sin(0)*8.0 + isopos[1]*sin(2*PI/3) + isopos[2]*sin(4*PI/3))];
+
+       return projpos;
+}
+
+//dark green (below StasisNorm) green (StasisNorm)
 function bpmColor(x) {
     var color = [];
     if (x < 1.0/3.0) {
@@ -948,13 +1183,33 @@ function bpmColor(x) {
         color.green = 125 - 125*sub;
         color.blue = 0.0;
     }
+
+    var mid1 = bpmStasisNorm + (1.0-bpmStasisNorm)*0.5;
+
+    if (x < bpmStasisNorm) {
+        var sub = x/bpmStasisNorm;
+        color.red = 0.0;
+        color.green = 125 + 125*sub;
+        color.blue = 0.0;
+    } else if (x < mid1) {
+        var sub = (x-bpmStasisNorm)/(mid1-bpmStasisNorm);
+        color.red = 255*sub;
+        color.green = 255;
+        color.blue = 0.0;
+    } else {
+        var sub = (x-mid1)/(1.0-mid1);
+        color.red = 255;
+        color.green = 255 - 255*sub;
+        color.blue = 0.0;
+    }
+
     return color;
 }
 
 //outputs RGB values based on a normalized o2 sat value
 function o2SatColor(x) {
     var color = [];
-    x = 1-x;
+    //x = 1-x;
     if (x < 1.0/3.0) { //green to cyan
         var subx = x*3.0;
         color.red = 0.0;
@@ -970,6 +1225,56 @@ function o2SatColor(x) {
         color.red = 0.5*subx;
         color.green = 0.0;
         color.blue = 1.0;
+    }
+
+    var mid1 = o2SatStasisNorm*0.333;
+    var mid2 = o2SatStasisNorm*0.666;
+
+    if (x < mid1) { //purple to blue
+        var sub = x/mid1;
+        color.red = 0.5*(1.0-sub);
+        color.green = 0.0;
+        color.blue = 0.8;
+    } else if (x < mid2) { //blue to cyan
+        var sub = (x-mid1)/(mid2-mid1);
+        color.red = 0.0;
+        color.green = sub;
+        color.blue = 0.8 + 0.2*sub;
+    } else if (x < o2SatStasisNorm) { //cyan to green
+        var sub = (x-mid2)/(o2SatStasisNorm-mid2);
+        color.red = 0.0;
+        color.green = 1.0;
+        color.blue = 1.0-sub;
+    } else { //green to dark green
+        var sub = (x-o2SatStasisNorm)/(1.0-o2SatStasisNorm);
+        color.red = 0.0;
+        color.green = 1.0-0.5*sub;
+        color.blue = 0.0;
+    }
+
+    return color;
+}
+
+function respRateColor(x) {
+    var color = [];
+
+    var mid1 = respRateStasisNorm + (1.0-respRateStasisNorm)*0.5;
+
+    if (x < respRateStasisNorm) { //blue to green
+        var sub = x/respRateStasisNorm;
+        color.red = 0.0;
+        color.green = sub;
+        color.blue = 1.0-sub;
+    } else if (x < mid1) { //green to yellow
+        var sub = (x-respRateStasisNorm)/(mid1-respRateStasisNorm);
+        color.red = sub;
+        color.green = 1.0;
+        color.blue = 0.0;
+    } else { //yellow to red
+        var sub = (x-mid1)/(1.0-mid1);
+        color.red = 1.0;
+        color.green = 1.0-sub;
+        color.blue = 0.0;
     }
 
     return color;
@@ -1057,34 +1362,6 @@ function hsv_to_rgb(h, s, v) {
 }
 
 
-
-function mousePressed() {
-    if (mouseX > 0 && mouseX < width && mouseY > 0 && mouseY < height) {
-        mouseDownOnCanvas = true;
-        mousePressLoc.x = mouseX;
-        mousePressLoc.y = mouseY;
-    }
-}
-
-function mouseDragged() {
-    if (mouseDownOnCanvas) {
-        yAngle = lastYAngle + (mouseX - mousePressLoc.x)/255;
-        xAngle = lastXAngle - (mouseY - mousePressLoc.y)/255;
-    }
-    
-}
-
-function mouseReleased() {
-
-    if (mouseDownOnCanvas) {
-        lastYAngle = yAngle;
-        lastXAngle = xAngle;
-    }
-
-    mouseDownOnCanvas = false;
-
-    console.log(mainColor)
-}
 
 
 /*Old color function
