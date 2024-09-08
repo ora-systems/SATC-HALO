@@ -11,7 +11,7 @@ var mode = 0;
 var initial = true;
 var time = 0.0;
 var pTimeStamp = 0.0, timeStamp = 0.0, clock = 0.0, span = 0.0;
-var SPEED = 5.0;
+var SPEED = 1.0;
 
 
 const ALTITUDE_MIN = 0.0, ALTITUDE_MAX = 30000.0;
@@ -73,6 +73,7 @@ var o2SatStasisNorm = 0;
 var respRateStasisNorm = 0;
 
 
+var heartClock = 0.0;
 
 function preload() {
     font = loadFont('resources/BebasNeue-Regular.ttf');
@@ -209,6 +210,8 @@ function setStasisNorms() {
 
 function setup() {
 
+    noiseSeed(0);
+    textAlign(CENTER)
 
      pTimeStamp = Date.now();
 
@@ -317,9 +320,13 @@ function interpolateData(data, t, n) {
     if (t > data.length-1) t = data.length-1;
     var p = t-floor(t);
     var i = floor(t);
-    var pointA = (data[i+1]) ?
+    var pointA = 0; 
+    if (data[i] && data[i][n]) {
+
+    pointA = (data[i+1]) ?
      data[i][n] + (data[i+1][n] - data[i][n])*p :
      data[i][n];
+    }
     return pointA;
     }
     return 0;
@@ -403,12 +410,19 @@ function draw() {
 
     background(0);
 
+    fill(255);
+    noStroke();
+    var seconds = clock/1000.0;
+    text("t = " + round(seconds), width-50, 50);
+
+    noFill();
     stroke(255);
 
 
-    image(graph, width/4, width/50, width/4, width/4/5)
+    //image(graph, width-width/8, width/150, width/10, width/10/5)
 
 
+    rect(0, 0, width, height);
    
 
     
@@ -494,15 +508,15 @@ fill(255);
     textSize(32*(width/1700))
     noStroke();
     if (mode == 0) {
-        text("Passive Recovery 1", width*0.76, height - height/4)
+        text("Temporary", atomCenter.x, height - height/4)
     } else if (mode == 1) {
-        text("Passive Recovery 2", width*0.76, height - height/4)
+        text("Passive Recovery 2", atomCenter.x, height - height/4)
     } else if (mode == 2) {
-        text("General Population", width*0.76, height - height/4)
+        text("General Population", atomCenter.x, height - height/4)
     } else if (mode == 3) {
-        text("Amateur Athlete", width*0.76, height - height/4)
+        text("Amateur Athlete", atomCenter.x, height - height/4)
     } else if (mode == 4) {
-        text("Bobby Williams", width*0.76, height - height/4)
+        text("Bobby Williams", atomCenter.x, height - height/4)
     }
 
     
@@ -584,21 +598,30 @@ fill(255);
        stroke(255,255,255,64);
        var graphWidth = width-height;
        var graphHeight = height/4;
-       var graphHeightB = height/4;
-       var graphA = height/4;
-       var graphB = height/3*2;
-       //rect(-width/2, -height/2, graphWidth, height);
+       var graphHeightB = height/7;
+       var graphA = 20;//height/4;
+       var graphB = height/7*3;
+       var graphC = height/7*4.25;
+       var graphD = height/7*5.5;
        rect(100, graphA, graphWidth-100, graphHeight);
-       //rect(100, graphB, graphWidth-100, graphHeightB);
+       rect(100, graphB, graphWidth-100, graphHeightB);
+       rect(100, graphC, graphWidth-100, graphHeightB);
+       rect(100, graphD, graphWidth-100, graphHeightB);
        stroke(0, 255, 0, 64);
        //drawingContext.setLineDash([1,10])
        //line(100, graphB + graphHeightB/2, graphWidth, graphB + graphHeightB/2);
+       //line(100, graphC + graphHeightB/2, graphWidth, graphC + graphHeightB/2);
+       //line(100, graphD + graphHeightB/2, graphWidth, graphD + graphHeightB/2);
+
+       line(100, graphB + graphHeightB*(1-bpmStasisNorm), graphWidth, graphB + graphHeightB*(1-bpmStasisNorm));
+       line(100, graphC + graphHeightB*(1-o2SatStasisNorm), graphWidth, graphC + graphHeightB*(1-o2SatStasisNorm));
+       line(100, graphD + graphHeightB*(1-respRateStasisNorm), graphWidth, graphD + graphHeightB*(1-respRateStasisNorm));
        //drawingContext.setLineDash([0, 0])
 
 
        noStroke();
        fill(255);
-
+/*
        
        //circle(100 + isopos.x*(graphWidth-100) + isopos.z*sqrt(1.0/2.0)*graphHeightB, graphB + graphHeightB - isopos.y*graphHeightB - isopos.z*sqrt(1.0/2.0)*graphHeightB, 3);
        var projpos = projectIso(graphHeight/2, [bpmNorm, 1.0-respRateNorm, o2SatNorm]);
@@ -653,20 +676,26 @@ fill(255);
        isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmStasisNorm,1,1], [bpmStasisNorm,0,1]);
        isoLine(graphHeight/2, [200, graphB + graphHeightB/2], [bpmStasisNorm,0,1], [bpmStasisNorm,0,0]);
 
+
+       */
+
        stroke(255);
        noFill();
-
+/*
+       heartClock += delta/breathPeriod;
+       line(width/3*2-25, height/7*6 - 50*1.25, width/3*2 + 25, height/7*6 - 50*1.25);
        beginShape();
         for (var i = 0; i < 1.0; i += 0.001) {
             //vertex(graphWidth + 50*cos(i*PI*2*(bpmNorm/bpmStasisNorm)), graphB + graphHeight/2 + 50*sin(i*PI*2*(respRateNorm/respRateStasisNorm)));
 
             var rotations = 1, oscilations = bpm/respRate;
-            vertex(graphWidth + 50*(1+sin(-PI/2 + i*PI*2*oscilations))/2*cos(i*PI*2*rotations), graphB + graphHeight/2 + 50*(1+sin(-PI/2 + i*PI*2*oscilations))/2*sin(i*PI*2*rotations));
+            //vertex(width/3*2 + 50*(1+sin(-PI/2 + i*PI*2*oscilations - 0*heartClock*PI*2)*0.25)/1*cos(i*PI*2*rotations + PI/2 + heartClock*PI*2), height/7*6 + 50*(1+sin(-PI/2 + i*PI*2*oscilations - 0*heartClock*PI*2)*0.25)/1*sin(i*PI*2*rotations + PI/2 + heartClock*PI*2));
 
             var rotations = 1, oscilations = bpm/respRate;
             //vertex(graphWidth + 50*(1+sin(i*PI*2*oscilations)*0.25)*cos(i*PI*2*rotations), graphB + graphHeight/2 + 50*(1+sin(i*PI*2*oscilations)*0.25)*sin(i*PI*2*rotations));
         }
-       endShape();
+       endShape(CLOSE);
+*/
    
        beginShape();
        for (var i = dataPoints; i > 0; i--) {
@@ -682,58 +711,82 @@ fill(255);
        //it appears that there is a ratio of 5 heart beats per breath (4 according to Google), which lowers at higher bpms (higher ratio represents controlled breathing)
        //this is known as Pulse-Respiration Quotient (PRQ)
 
-       var dur = 5.0*60.0;
+       var dur = ceil(clock/1000.0/60.0)*60.0*1000.0*4.0;
+
+       if (dur > 240000) dur = 240000;
 
        beginShape();
        for (var i = 0; i < 1.0; i += 0.01) {
-        var p = clock/(dur*1000.0);
+        var p = clock/(dur);
         var subClock = 0.0;
         if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
             p = 1.0;
-            subClock = (clock - dur*1000.0)/15000.0;
+            subClock = (clock - dur)/15000.0;
         }
            var norm = (interpolateData(simData, subClock + i*clock/15000.0, 1)-ALTITUDE_MIN)/(ALTITUDE_MAX-ALTITUDE_MIN);
-           vertex(graphWidth + p*(i-1)*(graphWidth-100), graphA + (1-norm)*graphHeight);
+           //vertex(graphWidth + p*(i-1)*(graphWidth-100), graphA + (1-norm)*graphHeight);
+           vertex(100 + p*(i)*(graphWidth-100), graphA + (1-norm)*graphHeight);
        }
        endShape();
 
    
        noStroke();
        fill(255);
-       text("Altitude", width/3, graphA + graphHeight + width*0.03)
-       text("Performance", width/3, graphB + graphHeight + width*0.03)
+       text("Altitude", 100 + (graphWidth-100)/2.0, graphA + graphHeight + width*0.04)
+       text("Performance", 100 + (graphWidth-100)/2.0, height - 20);
 
 //SPECTRUMS
 
 noStroke();
-for (var i = 0; i < 1.0; i += 0.05) {
+for (var i = 0; i < 1.05; i += 0.05) {
     var c = bpmColor(i);
     fill(c.red, c.green, c.blue);
     rect(width/10*7 - 50 + i*100, height/10*9, 5, 10);
+    //rect(graphWidth + 10, graphB + (graphHeightB-5)*(1.0-i), 5, 5);
 
     c = o2SatColor(i);
     fill(c.red*255, c.green*255, c.blue*255);
     rect(width/10*8 - 50 + i*100, height/10*9, 5, 10);
+    //rect(graphWidth + 10, graphC + (graphHeightB-5)*(1.0-i), 5, 5);
 
     c = respRateColor(i);
     fill(c.red*255, c.green*255, c.blue*255);
     rect(width/10*9 - 50 + i*100, height/10*9, 5, 10);
+    //rect(graphWidth + 10, graphD + (graphHeightB-5)*(1.0-i), 5, 5);
 }
 
 noStroke();
 fill(255);
 text("HR", width/10*7 - 10, height/10*9 + width*0.03);
 text(round(bpm), width/10*7 - 15, height/10*9 - width*0.01);
+//text("BPM " + round(bpm), graphWidth + 30, graphB + graphHeightB/2.0);
+
+var meter = width/10*7 - 50 + bpmNorm*100;
+stroke(255);
+line(meter, height/10*9 - 5, meter, height/10*9 + 15)
+//line(graphWidth, graphB + graphHeightB*(1-bpmNorm), graphWidth + 25, graphB + graphHeightB*(1-bpmNorm));
 
 noStroke();
 fill(255);
 text("SpO2", width/10*8 - 15, height/10*9 + width*0.03);
 text(round(o2Sat*100.0) + "%", width/10*8 - 10, height/10*9 - width*0.01);
+//text("SpO2 " + round(o2Sat*100.0) + "%", graphWidth + 30, graphC + graphHeightB/2.0);
+
+meter = width/10*8 - 50 + o2SatNorm*100;
+stroke(255);
+line(meter, height/10*9 - 5, meter, height/10*9 + 15)
+//line(graphWidth, graphC + graphHeightB*(1-o2SatNorm), graphWidth + 25, graphC + graphHeightB*(1-o2SatNorm));
 
 noStroke();
 fill(255);
 text("RR", width/10*9 - 8, height/10*9 + width*0.03);
 text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
+//text("RR " + round(respRate), graphWidth + 30, graphD + graphHeightB/2.0);
+
+meter = width/10*9 - 50 + respRateNorm*100;
+stroke(255);
+line(meter, height/10*9 - 5, meter, height/10*9 + 15)
+//line(graphWidth, graphD + graphHeightB*(1-respRateNorm), graphWidth + 25, graphD + graphHeightB*(1-respRateNorm));
 
 
        noFill();
@@ -741,15 +794,27 @@ text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
    
        fill(255);
 
+       //Axis numbers
        textSize(16*(width/1700))
        for (var i = 0; i <= 1.0; i += 1.0/4.0) {
         noStroke();
-        text((1-i)*30, graphWidth + 10, graphA + graphHeight*i)
+        text((1-i)*30, 80, graphA + graphHeight*i)
         stroke(255);
-        line(graphWidth + 10, graphA + graphHeight*i, graphWidth, graphA + graphHeight*i)
+        line(95, graphA + graphHeight*i, 105, graphA + graphHeight*i)
        }
 
-/*
+
+       for (var i = 0; i <= 1.0; i += 1.0/(dur/1000/60)/4.0) {
+        var min = floor(i*dur/1000/60);
+        var sec = round(i*dur/1000 - min*60);
+        var zero = (sec < 10) ? "0" : "";
+        noStroke();
+        text(min + ":" + sec + zero, 100 + (graphWidth-100)*i, graphA + graphHeight + 25);
+        stroke(255);
+        line(100 + (graphWidth-100)*i, graphA + graphHeight + 5, 100 + (graphWidth-100)*i, graphA + graphHeight - 5);
+       }
+
+
        
        noFill();
        textSize(16*(width/1700));
@@ -760,17 +825,20 @@ text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
 
        //beginShape();
        for (var i = 0; i < 1.0; i += 1.0/graphWidth) {
-        var p = clock/(dur*1000.0);
+        var p = clock/(dur);
         var subClock = 0.0;
         if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
             p = 1.0;
-            subClock = (clock - dur*1000.0)/15000.0;
+            subClock = (clock - dur)/15000.0;
         }
             noStroke();
            var norm = (interpolateData(simData, subClock + i*clock/15000.0, 3)-BPM_MIN)/(BPM_MAX-BPM_MIN);
            var c = bpmColor(norm);
            fill(c.red, c.green, c.blue);
-           square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (bpmStasisNorm - norm)*graphHeightB/2, 2);
+           //square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (bpmStasisNorm - norm)*graphHeightB/2, 2);
+
+           //square(100 + p*(i)*(graphWidth-100), graphB + graphHeightB/2 + (bpmStasisNorm-norm)*graphHeightB/2, 2); //centered stasis
+           square(100 + p*(i)*(graphWidth-100), graphB + (1-norm)*graphHeightB, 2); //relative stasis
        }
        //endShape();
        
@@ -778,16 +846,10 @@ text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
        noStroke();
        fill(255);
        var normT = (interpolateData(simData, clock/15000.0, 3)-BPM_MIN)/(BPM_MAX-BPM_MIN);
-       var meterY = graphB + graphHeightB/2 + (bpmStasisNorm - normT)*graphHeightB/2;
-       //text("HR", graphWidth + 5, meterY)
+       var meterY = graphB + (1-bpmStasisNorm)*graphHeightB;
+       text("HR", graphWidth + 15, meterY + 5)
        noFill();
 
-var meter = width/10*7 - 50 + bpmNorm*100;
-stroke(255);
-line(meter, height/10*9 - 5, meter, height/10*9 + 15)
-stroke(255,255,255,64);
-line(meter, meterY, meter, height/10*9 + 15)
-line(graphWidth, meterY, meter, meterY)
    
        //stroke(centerColor.red, centerColor.green, centerColor.blue);
        stroke(255);
@@ -796,16 +858,18 @@ line(graphWidth, meterY, meter, meterY)
        noStroke();
        //beginShape();
        for (var i = 0; i < 1.0; i += 1.0/graphWidth) {
-        var p = clock/(dur*1000.0);
+        var p = clock/(dur);
         var subClock = 0.0;
         if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
             p = 1.0;
-            subClock = (clock - dur*1000.0)/15000.0;
+            subClock = (clock - dur)/15000.0;
         }
            var norm = (interpolateData(simData, subClock + i*clock/15000.0, 2)/100.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
            var c = o2SatColor(norm);
            fill(c.red*255, c.green*255, c.blue*255);
-           square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (o2SatStasisNorm - norm)*graphHeightB/2, 2);
+           //square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (o2SatStasisNorm - norm)*graphHeightB/2, 2);
+           //square(100 + p*(i)*(graphWidth-100), graphC + graphHeightB/2 + (o2SatStasisNorm-norm)*graphHeightB/2, 2); //centered stasis
+           square(100 + p*(i)*(graphWidth-100), graphC + (1-norm)*graphHeightB, 2); //relative stasis
        }
        //endShape();
    
@@ -813,16 +877,10 @@ line(graphWidth, meterY, meter, meterY)
        noStroke();
        fill(255);
        var normT = (interpolateData(simData, clock/15000.0, 2)/100.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
-       var meterY = graphB + graphHeightB/2 + (o2SatStasisNorm - normT)*graphHeightB/2;
-       //text("O2", graphWidth + 25, meterY)
+       var meterY = graphC + (1-o2SatStasisNorm)*graphHeightB;
+       text("O2", graphWidth + 15, meterY + 5)
        noFill();
 
-meter = width/10*8 - 50 + o2SatNorm*100;
-stroke(255);
-line(meter, height/10*9 - 5, meter, height/10*9 + 15)
-stroke(255,255,255,64);
-line(meter, meterY, meter, height/10*9 + 15)
-line(graphWidth, meterY, meter, meterY)
    
    
        stroke(waveColor.red, waveColor.green, waveColor.blue);
@@ -831,16 +889,18 @@ line(graphWidth, meterY, meter, meterY)
        noStroke();
        beginShape();
        for (var i = 0; i < 1.0; i += 1.0/graphWidth) {
-        var p = clock/(dur*1000.0);
+        var p = clock/(dur);
         var subClock = 0.0;
         if (p > 1.0) { //if clock exceeds duration, add offset to clock so that most recent data is shown
             p = 1.0;
-            subClock = (clock - dur*1000.0)/15000.0;
+            subClock = (clock - dur)/15000.0;
         }
            var norm = (interpolateData(simData, subClock + i*clock/15000.0, 4)-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
            var c = respRateColor(norm);
            fill(c.red*255, c.green*255, c.blue*255);
-           square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (respRateStasisNorm - norm)*graphHeightB/2, 2);
+           //square(graphWidth + p*(i-1)*(graphWidth-100), graphB + graphHeightB/2 + (respRateStasisNorm - norm)*graphHeightB/2, 2);
+           //square(100 + p*(i)*(graphWidth-100), graphD + graphHeightB/2 + (respRateStasisNorm-norm)*graphHeightB/2, 2); //centered stasis
+           square(100 + p*(i)*(graphWidth-100), graphD + (1-norm)*graphHeightB, 2); //relative stasis
        }
        endShape();
 
@@ -850,20 +910,14 @@ line(graphWidth, meterY, meter, meterY)
        noStroke();
        fill(255);
        var normT = (interpolateData(simData, subClock + i*clock/15000.0, 4)-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
-       var meterY = graphB + graphHeightB/2 + (respRateStasisNorm - normT)*graphHeightB/2;
-      // text("RR", graphWidth + 45, meterY)
+       var meterY = graphD + (1-respRateStasisNorm)*graphHeightB;
+       text("RR", graphWidth + 15, meterY + 5)
        noFill();
     
     
        //drawingContext.setLineDash([20, 30])
-meter = width/10*9 - 50 + respRateNorm*100;
-stroke(255);
-line(meter, height/10*9 - 5, meter, height/10*9 + 15)
-stroke(255,255,255,64);
-line(meter, meterY, meter, height/10*9 + 15)
-line(graphWidth, meterY, meter, meterY)
 
-    */
+    
 
 
     var w2 = height*0.5*0.125;
@@ -909,7 +963,7 @@ line(graphWidth, meterY, meter, meterY)
         stroke(circleColor.red, circleColor.green, circleColor.blue, 255);
         beginShape();
         for (var i = 0; i < 1.0; i += 0.01) {
-            vertex(atomCenter.x - w2 + w2*2*i, atomCenter.y + expansion*sin(i*PI)*w2*3*(noise(i*3.0, clock/500.0)-0.5))
+            vertex(atomCenter.x - w2 + w2*2*i, atomCenter.y + expansion*pow(sin(i*PI), 1)*w2*2*(0.25*cos(i*PI*3) + 0.5*(noise(i*3.0, clock/500.0)-0.5)))
         }
         endShape();
 
