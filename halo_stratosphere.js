@@ -15,7 +15,7 @@ var SPEED = 1.0;
 
 
 const ALTITUDE_MIN = 0.0, ALTITUDE_MAX = 30000.0;
-const BPM_MIN = 50.0, BPM_MAX = 170.0;
+const BPM_MIN = 30.0, BPM_MAX = 170.0;
 const O2SAT_MIN = 0.50, O2SAT_MAX = 1.0;
 const RESP_RATE_MIN = 1.0, RESP_RATE_MAX = 50.0;
 
@@ -41,7 +41,8 @@ var bpmDelta = 0.0;
 var o2SatDelta = 0.0;
 var respRateDelta = 0.0;
 
-var lastStress = 0.0, stressDelta = 0.0;
+var lastStress = 0.0, stressDelta = 0.0, stressDelta2 = 0.0, stressSensitivity = 2.0;
+var lastRespStress = 0.0, respStressDelta = 0.0, respStressDelta2 = 0.0, respStressSensitivity = 5.0;
 
 
 //Visual Data
@@ -59,6 +60,7 @@ var ringCount = 0
 
 var expansion = 0.0, de = 0.0;
 var breathExpansion = 0.0, breathExpansionDv = 1;
+var respRotation = 0.0;
 
 var pulseRadius = 0.0, pulseBrightness = 0.0
 
@@ -86,27 +88,6 @@ function updateData() {
     mode = control.value;
 
     if (mode == 0) {
-        fetch("resources/PassiveRecovery1.csv")
-        .then((res) => res.text())
-        .then((text) => {
-            simData = CSVToArray(text);
-            simData.shift();
-    
-            console.log(simData)
-    
-        altitude = simData[0][1];
-        bpm = simData[0][3];
-        o2Sat = simData[0][2]/100.0;
-        respRate = simData[0][4];
-
-        bpmStasis = 60;
-        o2SatStasis = 1.0;
-        respRateStasis = 8.0;
-        setStasisNorms();
-
-         })
-        .catch((e) => console.error(e));
-    } else if (mode == 1) {
         fetch("resources/PassiveRecovery2.csv")
         .then((res) => res.text())
         .then((text) => {
@@ -114,6 +95,9 @@ function updateData() {
             simData.shift();
     
             console.log(simData)
+            initial = true;
+        
+            stressSensitivity = 4.0;
     
         altitude = simData[0][1];
         bpm = simData[0][3];
@@ -127,7 +111,7 @@ function updateData() {
 
          })
         .catch((e) => console.error(e));
-    } else if (mode == 2) {
+    } else if (mode == 1) {
         fetch("resources/GenPop.csv")
         .then((res) => res.text())
         .then((text) => {
@@ -135,6 +119,33 @@ function updateData() {
             simData.shift();
     
             console.log(simData)
+            initial = true;
+
+            stressSensitivity = 4.0;
+    
+        altitude = simData[0][1];
+        bpm = simData[0][3];
+        o2Sat = simData[0][2]/100.0;
+        respRate = simData[0][4];
+
+        bpmStasis = 60;
+        o2SatStasis = 1.0;
+        respRateStasis = 8.0;
+        setStasisNorms();
+
+         })
+        .catch((e) => console.error(e));
+    } else if (mode == 2) {
+        fetch("resources/AmAthlete.csv")
+        .then((res) => res.text())
+        .then((text) => {
+            simData = CSVToArray(text);
+            simData.shift();
+    
+            console.log(simData)
+            initial = true;
+
+            stressSensitivity = 2.0;
     
         altitude = simData[0][1];
         bpm = simData[0][3];
@@ -149,27 +160,6 @@ function updateData() {
          })
         .catch((e) => console.error(e));
     } else if (mode == 3) {
-        fetch("resources/AmAthlete.csv")
-        .then((res) => res.text())
-        .then((text) => {
-            simData = CSVToArray(text);
-            simData.shift();
-    
-            console.log(simData)
-    
-        altitude = simData[0][1];
-        bpm = simData[0][3];
-        o2Sat = simData[0][2]/100.0;
-        respRate = simData[0][4];
-
-        bpmStasis = 60;
-        o2SatStasis = 1.0;
-        respRateStasis = 8.0;
-        setStasisNorms();
-
-         })
-        .catch((e) => console.error(e));
-    } else if (mode == 4) {
         fetch("resources/data.csv")
         .then((res) => res.text())
         .then((text) => {
@@ -177,6 +167,9 @@ function updateData() {
             simData.shift();
     
             console.log(simData)
+            initial = true;
+
+            stressSensitivity = 2.0;
     
         altitude = simData[0][1];
         bpm = simData[0][3];
@@ -305,7 +298,8 @@ function setup() {
     circleColor.red = 255;
     circleColor.green = 255;
     circleColor.blue = 255;
-    
+ 
+    updateData();
 }
 
 
@@ -342,8 +336,20 @@ function interpolateData(data, t, n) {
 }*/
 
 function draw() {
+
+
+    var dur = 0;//ceil(clock/1000.0/60.0)*60.0*1000.0*4.0;
     
-    if (clock/15000.0 > simData.length-1) {
+
+    if (mode == 3) {
+        dur = 420000;
+    
+    } else {
+
+        dur = 240000;
+    }
+
+    if (clock/15000.0 > simData.length-1 || clock > dur) {
         clock = 0.0;
 
         initial = true;
@@ -486,36 +492,47 @@ fill(255);
 
 
     //Calculate stress
-    var stress = (bpmNorm - bpmStasisNorm) + (o2SatStasisNorm - o2SatNorm);
+    var stress = ((bpmNorm - bpmStasisNorm) + (o2SatStasisNorm - o2SatNorm))*stressSensitivity;
+    var respStress = (respRateNorm - respRateStasisNorm)*respStressSensitivity;
  
+
 
     if (initial) {
         lastStress = stress;
+        stressDelta = 0.0;
+        lastRespStress = respStress;
+        respStressDelta = 0.0;
         initial = false;
+        console.log("INITIAL VALUE ")
     }
 
+
     stressDelta += (stress - lastStress);
+    stressDelta2 += ((stress-lastStress) - stressDelta2)*delta*0.0005;
+    respStressDelta += (respStress - lastRespStress);
+    respStressDelta2 += ((respStress-lastRespStress) - respStressDelta2)*delta*0.0005;
+
+
+
+    //rotation -= delta/100.0*stressDelta;
+    rotation -= delta*stressDelta2;
+    respRotation -= delta*respStressDelta2;
 
 
     lastStress = stress;
-
-    rotation -= delta/200.0*stressDelta;
-
-
+    lastRespStress = respStress;
 
 
     
     textSize(32*(width/1700))
     noStroke();
     if (mode == 0) {
-        text("Temporary", atomCenter.x, height - height/4)
+        text("Passive Recovery", atomCenter.x, height - height/4)
     } else if (mode == 1) {
-        text("Passive Recovery 2", atomCenter.x, height - height/4)
-    } else if (mode == 2) {
         text("General Population", atomCenter.x, height - height/4)
-    } else if (mode == 3) {
+    } else if (mode == 2) {
         text("Amateur Athlete", atomCenter.x, height - height/4)
-    } else if (mode == 4) {
+    } else if (mode == 3) {
         text("Bobby Williams", atomCenter.x, height - height/4)
     }
 
@@ -707,13 +724,10 @@ fill(255);
        endShape();
 
        //is there a way to use stasis values to predict an expected KPI from another KPI?
-       console.log("ratio " + bpm/respRate);
+       //console.log("ratio " + bpm/respRate);
        //it appears that there is a ratio of 5 heart beats per breath (4 according to Google), which lowers at higher bpms (higher ratio represents controlled breathing)
        //this is known as Pulse-Respiration Quotient (PRQ)
 
-       var dur = ceil(clock/1000.0/60.0)*60.0*1000.0*4.0;
-
-       if (dur > 240000) dur = 240000;
 
        beginShape();
        for (var i = 0; i < 1.0; i += 0.01) {
@@ -757,8 +771,8 @@ for (var i = 0; i < 1.05; i += 0.05) {
 
 noStroke();
 fill(255);
-text("HR", width/10*7 - 10, height/10*9 + width*0.03);
-text(round(bpm), width/10*7 - 15, height/10*9 - width*0.01);
+text("BPM", width/10*7, height/10*9 + width*0.03);
+text(round(bpm), width/10*7, height/10*9 - width*0.01);
 //text("BPM " + round(bpm), graphWidth + 30, graphB + graphHeightB/2.0);
 
 var meter = width/10*7 - 50 + bpmNorm*100;
@@ -768,8 +782,8 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
 
 noStroke();
 fill(255);
-text("SpO2", width/10*8 - 15, height/10*9 + width*0.03);
-text(round(o2Sat*100.0) + "%", width/10*8 - 10, height/10*9 - width*0.01);
+text("SpO2", width/10*8, height/10*9 + width*0.03);
+text(round(o2Sat*100.0) + "%", width/10*8, height/10*9 - width*0.01);
 //text("SpO2 " + round(o2Sat*100.0) + "%", graphWidth + 30, graphC + graphHeightB/2.0);
 
 meter = width/10*8 - 50 + o2SatNorm*100;
@@ -779,8 +793,8 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
 
 noStroke();
 fill(255);
-text("RR", width/10*9 - 8, height/10*9 + width*0.03);
-text(round(respRate), width/10*9 - 10, height/10*9 - width*0.01);
+text("RR", width/10*9, height/10*9 + width*0.03);
+text(round(respRate), width/10*9, height/10*9 - width*0.01);
 //text("RR " + round(respRate), graphWidth + 30, graphD + graphHeightB/2.0);
 
 meter = width/10*9 - 50 + respRateNorm*100;
@@ -847,7 +861,8 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
        fill(255);
        var normT = (interpolateData(simData, clock/15000.0, 3)-BPM_MIN)/(BPM_MAX-BPM_MIN);
        var meterY = graphB + (1-bpmStasisNorm)*graphHeightB;
-       text("HR", graphWidth + 15, meterY + 5)
+       text("BPM", graphWidth + 15, graphB + graphHeightB/2)
+       text("Stasis = " + bpmStasis, 60, meterY + 5)
        noFill();
 
    
@@ -878,7 +893,8 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
        fill(255);
        var normT = (interpolateData(simData, clock/15000.0, 2)/100.0-O2SAT_MIN)/(O2SAT_MAX-O2SAT_MIN);
        var meterY = graphC + (1-o2SatStasisNorm)*graphHeightB;
-       text("O2", graphWidth + 15, meterY + 5)
+       text("O2", graphWidth + 15, graphC + graphHeightB/2)
+       text("Stasis = " + o2SatStasis*100.0 + "%", 60, meterY + 5)
        noFill();
 
    
@@ -911,7 +927,8 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
        fill(255);
        var normT = (interpolateData(simData, subClock + i*clock/15000.0, 4)-RESP_RATE_MIN)/(RESP_RATE_MAX-RESP_RATE_MIN);
        var meterY = graphD + (1-respRateStasisNorm)*graphHeightB;
-       text("RR", graphWidth + 15, meterY + 5)
+       text("RR", graphWidth + 15, graphD + graphHeightB/2)
+       text("Stasis = " + respRateStasis, 60, meterY + 5)
        noFill();
     
     
@@ -1002,7 +1019,7 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
         for (var i = 0; i < 1.0; i += 0.001) {
             var a = 6, b = 4;
             var r = rad/2 + w2/2*(1+sin(i*PI*a))/2;
-            vertex(atomCenter.x + r*cos(i*PI*b + 3*breathExpansion), atomCenter.y + r*sin(i*PI*b + 3*breathExpansion));
+            vertex(atomCenter.x + r*cos(i*PI*b + respRotation), atomCenter.y + r*sin(i*PI*b + respRotation));
         }
         endShape(CLOSE);
         strokeWeight(1);
@@ -1011,7 +1028,7 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
         for (var i = 0; i < 1.0; i += 0.001) {
             var a = 6, b = 4;
             var r = rad/2 + w2/2*(1+sin(i*PI*a))/2;
-            vertex(atomCenter.x + r*cos(i*PI*b + 3*breathExpansion), atomCenter.y + r*sin(i*PI*b + 3*breathExpansion));
+            vertex(atomCenter.x + r*cos(i*PI*b + respRotation), atomCenter.y + r*sin(i*PI*b + respRotation));
         }
         endShape(CLOSE);
 
@@ -1061,7 +1078,7 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
       
       beginShape();
       for (var t = 0; t < 1.0; t += 0.005) {
-          var rNoise = (complexity+expansion*0.0)*(noise(3 + time/3*speed - 3*i + 5*cos(t*PI*2), 3 + time/3*speed - 3*i + 5*sin(t*PI*2), i*5*complexity - expansion2*0.0)-0.5);
+          var rNoise = (complexity+expansion*0.0)*(noise(3 + 0*time/3*speed - 0*i + 5*cos(t*PI*2 - 0*i*stressDelta*25), 3 + 1*time/3*speed - 0*i + 5*sin(t*PI*2 - 0*i*stressDelta*25), i*5*complexity - expansion2*0.0 - time/2*speed)-0.5);
           //var xNoise = complexity*i*0*(noise(25 + time/5 + 155*cos(t*PI*2), 25 + time/5 + 155*sin(t*PI*2), i*1-time/5)-0.5);
           //var yNoise = complexity*i*0*(noise(15 + time/5 + 155*cos(t*PI*2), 15 + time/5 + 155*sin(t*PI*2), i*1-time/5)-0.5);
           //var zNoise = complexity*pow(i,0.5)*(noise(t*5 + time/50)-0.5);//sin(t*PI*8 + time);//(noise(3 + time/5 + 5*cos(t*PI*2), 3 + time/5 + 5*sin(t*PI*2), i*1-time/5)-0.5);
@@ -1099,7 +1116,8 @@ line(meter, height/10*9 - 5, meter, height/10*9 + 15)
 
 
 
-    stressDelta *= 0.995;
+      stressDelta *= 0.995;
+      respStressDelta *= 0.905;
     
 
     //Draw FX
