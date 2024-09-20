@@ -218,10 +218,10 @@ function setup() {
 
     /*P5 JS canvas for PIL + HALO render*/
     
-    var width = 1720/1.5;//3440;//document.getElementById("canvasSection").offsetWidth;
-    var height = 720/1.5;//1440;//document.getElementById("canvasSection").offsetHeight;
-    width = window.innerWidth;
-    height = width*0.4186;
+    var width = 3440;//document.getElementById("canvasSection").offsetWidth;
+    var height = 1440;//document.getElementById("canvasSection").offsetHeight;
+    //width = window.innerWidth;
+    //height = width*0.4186;
 
     console.log(window.clientWidth);
     var p5Canvas = createCanvas(width, height);
@@ -446,13 +446,13 @@ var spectrumY = height/20*17, s1x = width/10*7, s2x = width/10*8, s3x = width/10
 noFill();
 stroke(255);
 var meter = s1x + sw*(bpmNorm - 0.5);
-line(meter, spectrumY - 5, meter, spectrumY + 15)
+line(meter, spectrumY - height/100, meter, spectrumY + height/50)
 //line(graphWidth, graphB + graphHeightB*(1-bpmNorm), graphWidth + 25, graphB + graphHeightB*(1-bpmNorm));
 meter = s2x + sw*(o2SatNorm - 0.5);
-line(meter, spectrumY - 5, meter, spectrumY + 15)
+line(meter, spectrumY - height/100, meter, spectrumY + height/50)
 //line(graphWidth, graphC + graphHeightB*(1-o2SatNorm), graphWidth + 25, graphC + graphHeightB*(1-o2SatNorm));
 meter = s3x + sw*(respRateNorm - 0.5);
-line(meter, spectrumY - 5, meter, spectrumY + 15)
+line(meter, spectrumY - height/100, meter, spectrumY + height/50)
 //line(graphWidth, graphD + graphHeightB*(1-respRateNorm), graphWidth + 25, graphD + graphHeightB*(1-respRateNorm));
 
 stroke(0, 255, 0, 64);
@@ -462,17 +462,17 @@ noStroke(); // Color bar
 for (var i = 0; i < 1.05; i += 0.05) {
     var c = bpmColor(i);
     fill(c.red, c.green, c.blue);
-    rect(s1x - sw/2 + i*sw, spectrumY, 5, 10);
+    rect(s1x - sw/2 + i*sw, spectrumY, height/100, height/100);
     //rect(graphWidth + 10, graphB + (graphHeightB-5)*(1.0-i), 5, 5);
 
     c = o2SatColor(i);
     fill(c.red*255, c.green*255, c.blue*255);
-    rect(s2x - sw/2 + i*sw, spectrumY, 5, 10);
+    rect(s2x - sw/2 + i*sw, spectrumY, height/100, height/100);
     //rect(graphWidth + 10, graphC + (graphHeightB-5)*(1.0-i), 5, 5);
 
     c = respRateColor(i);
     fill(c.red*255, c.green*255, c.blue*255);
-    rect(s3x - sw/2 + i*sw, spectrumY, 5, 10);
+    rect(s3x - sw/2 + i*sw, spectrumY, height/100, height/100);
     //rect(graphWidth + 10, graphD + (graphHeightB-5)*(1.0-i), 5, 5);
 }
 
